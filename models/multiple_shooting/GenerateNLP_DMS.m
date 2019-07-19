@@ -33,8 +33,9 @@ for k=0:data.Nint-1
     lbw = [lbw; model.umin];
     ubw = [ubw; model.umax];
     
-    if strcmpi(data.odeMethod, 'rk4dt')
-        if strcmpi(data.dt,'log'), DT = -log((k+1)/(data.Nint+1))/data.Nint*data.Duration;
+    if strcmpi(data.odeMethod, 'rk4_dt')
+        tgrid = getTimeScale(model, data);
+        if strcmpi(data.dt,'log'), DT = tgrid(k+2)-tgrid(k+1);%-log((k+1)/(data.Nint+1))/data.Nint*data.Duration;
         elseif strcmpi(data.dt,'a'), DT = (0.005+1/data.Nint*(1-fix(k*10/data.Nint)/data.Nint))*data.Duration;
         end
         Fk = model.odeF('x0', Xk, 'p', Uk, 'DT', DT);

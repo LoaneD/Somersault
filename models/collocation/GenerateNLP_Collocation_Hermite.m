@@ -53,10 +53,10 @@ ubw = [ubw; model.umax];
 for k=0:N-1
     [fk, qk] = f(Xk,Uk);
     
-    Xk12 = MX.sym(['X_' num2str(k) '_2'], model.nx);
-    w = [w, {Xk12}];
-    lbw = [lbw; model.xmin];
-    ubw = [ubw; model.xmax];
+%     Xk12 = MX.sym(['X_' num2str(k) '_2'], model.nx);
+%     w = [w, {Xk12}];
+%     lbw = [lbw; model.xmin];
+%     ubw = [ubw; model.xmax];
     
     Uk1 = MX.sym(['U_' num2str(k+1)], model.nu);
     Xk1 = MX.sym(['X_' num2str(k+1)], model.nx);
@@ -64,10 +64,11 @@ for k=0:N-1
 
     x12 = 0.5*(Xk + Xk1) + h*(fk - fk1)/8;
     u12 = 0.5*(Uk + Uk1);
-    [fk12, qk12] = f(Xk12,u12);
+    [fk12, qk12] = f(x12,u12);
     
     Xkend = Xk+h*(fk + 4*fk12 +fk1)/6;
     xd12 = -1.5*(Xk - Xkend)/h - 0.25*(fk + fk1);
+%     xd12 = -1.5*(Xk - Xk1)/h - 0.25*(fk + fk1);
     J = J + h*(qk + 4*qk12 +qk1)/6;
     
     w = [w, {Xk1}];
@@ -81,9 +82,12 @@ for k=0:N-1
     Xk = Xk1;
     Uk = Uk1;
     % % Inequality constraint to reduce  
-    g = {g{:}, x12 - Xk12, abs(xd12-fk12), Xkend - Xk};
-    lbg = [lbg; zeros(model.nx,1); zeros(model.nx,1); zeros(model.nx,1)];
-    ubg = [ubg; zeros(model.nx,1); 0.005*ones(model.nx,1); zeros(model.nx,1)];
+%     g = {g{:}, x12 - Xk12, abs(xd12-fk12), Xkend - Xk};
+%     lbg = [lbg; zeros(model.nx,1); zeros(model.nx,1); zeros(model.nx,1)];
+%     ubg = [ubg; zeros(model.nx,1); 0.005*ones(model.nx,1); zeros(model.nx,1)];
+    g = {g{:}, Xkend - Xk, abs(xd12-fk12)};
+    lbg = [lbg; zeros(model.nx,1); zeros(model.nx,1)];
+    ubg = [ubg; zeros(model.nx,1); 0.005*ones(model.nx,1)];
     
     % % Add equality constraint
     if strcmpi(model.name,'10')

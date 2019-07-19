@@ -10,6 +10,7 @@ if strcmpi(data.odeMethod,'rk4_dt')
             tgrid = [tgrid t+DT];
             t = t + DT;
         end
+        tgrid(data.Nint+1) = data.Duration;
     elseif strcmpi(data.dt,'a')
         for k=0:data.Nint-1
             DT = (0.005+1/data.Nint*(1-fix(k*10/data.Nint)/data.Nint))*data.Duration;
@@ -25,8 +26,8 @@ else
         for i=1:data.Nint
             tgrid = [tgrid spaces(i)+collocation_points(data.degree, 'legendre') spaces(i+1)];
         end
-    elseif strcmpi(data.NLPMethod, 'Collocation') && strcmpi(data.collocMethod, 'hermite')
-        tgrid = linspace(0, data.Duration, data.Nint*2+1);
+%     elseif strcmpi(data.NLPMethod, 'Collocation') && strcmpi(data.collocMethod, 'hermite')
+%         tgrid = linspace(0, data.Duration, data.Nint*2+1);
     else
         if nargin > 2
             tgrid = linspace(0, t, data.Nint+1);

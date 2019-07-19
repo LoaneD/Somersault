@@ -6,6 +6,7 @@ model = str.model;
 data = str.data;
 time = str.time(rep);
 name = str.name;
+stat = str.stat;
 
 clf(fig);
 a = ceil(sqrt(model.nq+1));
@@ -36,6 +37,6 @@ legend('q','u','v')
 
 subplot(a,b,i+1), stairs(tgrid, u_opt', '-')
 legend(model.DOFname{7:end})
-sgtitle(strcat(name, sprintf(' - rep n°%d',rep)));
+sgtitle(fig, strcat(name, sprintf(' - rep n°%d - ',rep), stat.returnStat{rep}), 'Interpreter', 'none');
 
 end

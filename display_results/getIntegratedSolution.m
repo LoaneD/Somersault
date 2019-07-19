@@ -8,10 +8,10 @@ import casadi.*
 
 % create integrative function
 tau_base = SX.zeros(6,1);
-forDyn = @(x,u)[  x(model.idx_v)
-    FDab_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
 x = SX.sym('x', model.nx,1);
 u = SX.sym('u', model.nu,1);
+forDyn = @(x,u)[  x(model.idx_v)
+    FDab_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
 f = Function('f', {x, u}, {forDyn(x,u)});
 
 % integrate collocation optimal solutions over each intervals
