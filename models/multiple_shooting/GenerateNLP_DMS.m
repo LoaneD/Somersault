@@ -23,7 +23,27 @@ if ~isfield(data, 'Duration')
 end
 
 % Formulate the NLP
-Xk = data.x0;
+% Xk = data.x0;
+Xk = MX.sym(['X_' '0'], model.nx);
+w = {w{:}, Xk};
+Xk0 = Xk;
+lbw = [lbw; model.xmin];
+ubw = [ubw; model.xmax];
+g = [g, {Xk}];
+cStartl = [];
+cStartu = [];
+for i=1:model.nx
+    if i ~= model.dof.Somer+model.nq || ~isfield(data, 'freeSomerSpeed')
+        cStartl = [cStartl; data.x0(i)];
+        cStartu = [cStartu; data.x0(i)];
+    else
+        cStartl = [cStartl; model.xmin(i)];
+        cStartu = [cStartu; model.xmax(i)];
+    end
+end
+lbg = [lbg; cStartl];
+ubg = [ubg; cStartu];
+
 for k=0:data.Nint-1
     
     % New NLP variable for the control
@@ -58,7 +78,7 @@ for k=0:data.Nint-1
     ubw = [ubw; model.xmax];
     
     % Add equality constraint
-    if strcmpi(model.name,'10')
+    if isfield(model, 'colD')
         dist = model.colD('Q',Xk_end);
         g = [g, {Xk_end-Xk}, {dist.d}];
         lbg = [lbg; zeros(model.nx,1); model.markers.dmin+0.01];
@@ -88,16 +108,20 @@ end
 
 % create solver
 if strcmpi(data.obj, 'twist')
-    prob = struct('f', Xk(model.dof.Twist)/(2*pi), ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = Xk(model.dof.Twist)/(2*pi); 
+elseif strcmpi(data.obj, 'twistPond')
+    if isfield(data, 'freeSomerSpeed') && strcmpi(data.freeSomerSpeed, 'pond')
+        o = 1000*Xk(model.dof.Twist) + J + 0.01*Xk0(model.dof.Somer);
+    else
+        o = 1000*Xk(model.dof.Twist) + J;
+    end
 elseif strcmpi(data.obj, 'trajectory')
     if nargin <= 2 || (nargin > 2 && ~ismember(model.dof.Twist,variables))
         g = [g, {Xk([model.dof.Twist])}  ];
         lbg = [lbg; -Inf];
         ubg = [ubg; -4*pi+0.5*pi];
     end
-    prob = struct('f', J, ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = J;
 elseif strcmpi(data.obj, 'torque')
     if nargin <= 2 || (nargin > 2 && ~ismember(model.dof.Twist,variables))
         g = [g, {Xk([model.dof.Twist])}  ];
@@ -105,9 +129,10 @@ elseif strcmpi(data.obj, 'torque')
         lbg = [lbg; -Inf];
         ubg = [ubg; -4*pi+0.5*pi];
     end
-    prob = struct('f', J, ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = J;
 end
+prob = struct('f', o, ...
+    'x', vertcat(w{:}), 'g', vertcat(g{:}));
 end
 
 
