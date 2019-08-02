@@ -170,29 +170,32 @@ if size(optRep, 2) > 0 || nonOpt
             % display twist evolution through time
         case 'Twisting'
             figure(fig);
-            meanAll = [];
-            meanOpt = [];
-            for j=1:size(QVU,2)
-                meanAll = [meanAll mean(QVU(model.dof.Twist,j,:))*coefTwist];
-                meanOpt = [meanOpt mean(QVU(model.dof.Twist,j,optRep))*coefTwist];
-            end
+            endValues = [];
+%             meanAll = [];
+%             meanOpt = [];
+%             for j=1:size(QVU,2)
+%                 meanAll = [meanAll mean(QVU(model.dof.Twist,j,:))*coefTwist];
+%                 meanOpt = [meanOpt mean(QVU(model.dof.Twist,j,optRep))*coefTwist];
+%             end
             for i=1:rep_number
-                hold on
+%                 hold on
                 if nonOpt || ismember(rep_vect(i), optRep)
-                    plot(t(rep_vect(i),:), -QVU(model.dof.Twist, :, rep_vect(i))*coefTwist, 'DisplayName', strcat(sprintf('Rep n°%d - ', rep_vect(i)),stat.returnStat{rep_vect(i)}));
+                    endValues(size(endValues)+1) = -QVU(model.dof.Twist, end, rep_vect(i))*coefTwist;
+%                     plot(t(rep_vect(i),:), -QVU(model.dof.Twist, :, rep_vect(i))*coefTwist, 'DisplayName', strcat(sprintf('Rep n°%d - ', rep_vect(i)),stat.returnStat{rep_vect(i)}));
 %                 else
 %                     plot(t(i,:), -QVU(model.dof.Twist, :, i)*coefTwist, 'DisplayName', strcat(sprintf('Rep n°%d - ', i),stat.returnStat{i}));
                 end
             end
-            if nonOpt, plot(t(rep_vect(1),:), -meanAll, 'k:', 'DisplayName', 'Mean of All Solutions'); end
-            plot(t(rep_vect(1),:), -meanOpt, 'k-.', 'DisplayName', 'Mean of Optimal Solutions');
-            xlabel('Time (s)');
-            ylabel(model.Unitname(model.dof.Twist));
+            histogram(endValues, 10);
+%             if nonOpt, plot(t(rep_vect(1),:), -meanAll, 'k:', 'DisplayName', 'Mean of All Solutions'); end
+%             plot(t(rep_vect(1),:), -meanOpt, 'k-.', 'DisplayName', 'Mean of Optimal Solutions');
+%             xlabel('Time (s)');
+%             ylabel(model.Unitname(model.dof.Twist));
             title(strcat('Twisting during simulation - ', name));
-            hold off
+%             hold off
             legend show
-            leg = findobj(gcf, 'Type', 'Legend');
-            set(leg, 'Interpreter', 'none');
+%             leg = findobj(gcf, 'Type', 'Legend');
+%             set(leg, 'Interpreter', 'none');
     end
 else
     disp('No optimal solutions found for this model.');

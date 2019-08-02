@@ -37,6 +37,7 @@ legend('q','u','v')
 
 subplot(a,b,i+1), stairs(tgrid, u_opt', '-')
 legend(model.DOFname{7:end})
-sgtitle(fig, strcat(name, sprintf(' - rep n°%d - ',rep), stat.returnStat{rep}), 'Interpreter', 'none');
-
+if data.Duration ~=0, sgtitle(fig, strcat(name, sprintf(' - rep n°%d - ',rep), stat.returnStat{rep}), 'Interpreter', 'none');
+else, sgtitle(fig, strcat(name, sprintf(' t = %.4f s - rep n°%d - ',time, rep), stat.returnStat{rep}), 'Interpreter', 'none');
+end
 end

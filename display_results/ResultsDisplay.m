@@ -13,30 +13,35 @@ str.time = [];
 % structure
 % To get results comparaison through models (comparing mean values) put all
 % the models to study
-models = createStruct(model10Col_h_100, model10Col_t_100,model10Col_h_30, model10Col_t_30);%list all models variables
-datas = createStruct(data10Col_h_100, data10Col_t_100,data10Col_h_30, data10Col_t_30);%list all datas variables
-stats = createStruct(stat10Col_h_100, stat10Col_t_100,stat10Col_h_30, stat10Col_t_30);%list all stats variables
+models = createStruct(model10_8_30sCT);%list all models variables
+datas = createStruct(data10_8_30);%list all datas variables
+stats = createStruct(stat10_8_30);%list all stats variables
 str = repmat(str, 1, size(models, 2));
-str(1).QVU = QVU10Col_h_100;str(2).QVU = QVU10Col_t_100;%list all QVU variables
-str(3).QVU = QVU10Col_h_30;str(4).QVU = QVU10Col_t_30;
-str(1).time = ones(1,size(QVU10Col_h_100,3));str(2).time = ones(1,size(QVU10Col_t_100,3));%to precise the time frame, if free time in model put topt obtained after optimization
-str(3).time = ones(1,size(QVU10Col_h_30,3));str(1).time = ones(1,size(QVU10Col_t_30,3));
+str(1).QVU = QVU10_8_30sCT;%str(2).QVU = QVU10Pond_100;%list all QVU variables
+str(1).time = ones(1,size(QVU10_8_30sCT,3));%str(2).time = ones(1,size(QVU10Pond_100,3));%to precise the time frame, if free time in model put topt obtained after optimization
+
 
 for i=1:size(str, 2)
     str(i).model = models(i);
     str(i).data = datas(i);
-%     str(i).QVU = QVUs(i);
     str(i).stat = stats(i);
-%     str(i).time = times(i);
-    % Create a name for each model, to use in legend
     if isfield(datas(i), 'collocMethod') 
-        if datas(i).collocMethod ~= 0
+        if isfield(datas(i), 'degree')
+            str(i).name = sprintf('%s DoF, %d NInt, t = %d s, Obj : %s, NLP : %s, Colloc : %s %d', ...
+                models(i).name, datas(i).Nint, datas(i).Duration, datas(i).obj, datas(i).NLPMethod, datas(i).collocMethod, datas(i).degree);
+        elseif datas(i).collocMethod ~= 0
             str(i).name = sprintf('%s DoF, %d NInt, t = %d s, Obj : %s, NLP : %s, Colloc : %s', ...
                 models(i).name, datas(i).Nint, datas(i).Duration, datas(i).obj, datas(i).NLPMethod, datas(i).collocMethod);
+        else
+            str(i).name = sprintf('%s DoF, %d NInt, t = %d s, Obj : %s, NLP : %s', ...
+                models(i).name, datas(i).Nint, datas(i).Duration, datas(i).obj, datas(i).NLPMethod);            
         end
     else
-        str(i).name = sprintf('%s DoF, %d Int, t = %d s, obj : %s, NLP : %s, ODE : %s' , ...
+        if datas(i).Duration == 0, str(i).name = sprintf('%s DoF, %d Int, obj : %s, NLP : %s, ODE : %s' , ...
+            models(i).name, datas(i).Nint, datas(i).obj, datas(i).NLPMethod, datas(i).odeMethod);
+        else, str(i).name = sprintf('%s DoF, %d Int, t = %d s, obj : %s, NLP : %s, ODE : %s' , ...
             models(i).name, datas(i).Nint, datas(i).Duration, datas(i).obj, datas(i).NLPMethod, datas(i).odeMethod);
+        end
     end
 end
 
@@ -45,16 +50,16 @@ outIntegrate = struct;
 outIntegrate.errors = [];outIntegrate.xint = [];outIntegrate.xint_prop = [];outIntegrate.xt1 = [];
 outIntegrate = repmat(outIntegrate, 1, size(str,2));
 for i=1:size(str,2)%number of models
-    outIntegrate(i) = getIntegratedSolution(str(i));
+    if strcmpi(str(i).data.NLPMethod, 'Collocation'), outIntegrate(i) = getIntegratedSolution(str(i)); end
 end
 % Only one model :
 % - Check the correspondance between solution (collocation approximation through polynomials)
 % and integrated solution (integral at each state with solution points or
 % propagated intergal calculating integration of state obtained with integration)
 fig(1) = figure;fig(2) = figure;fig(3) = figure;
-for i=2:size(str,2)%number of models
+for i=1:size(str,2)%number of models
     % 3 figures needed
-    checkCollocationErrors(str(i), outIntegrate(i), fig);
+    if strcmpi(str(i).data.NLPMethod, 'Collocation'), checkCollocationErrors(str(i), outIntegrate(i), fig); end
     if i~=size(models, 2), pause; end
 end
 
@@ -95,7 +100,7 @@ fig = figure;
 for i=1:size(str,2)
     disp(strcat('### Model: ', str(i).name, ' ###'));
     %ArmMovement Twisting
-    results(str(i), 'Twisting', fig,1);
+    results(str(i), 'Twisting', fig,0);
     if i~= size(str,2), pause; end
 end
 
@@ -118,18 +123,19 @@ comparaisonModels(str, 'SolStat', fig, 0);%SolStat ComparaisonTwist ComparaisonA
 comparaisonModels(str, 'ComparaisonTwist', fig, 0);
 % Or for all solutions
 fig = figure;
-comparaisonModels(str, 'ComparaisonArm', fig, 1);%SolStat ComparaisonTwist ComparaisonArm
+comparaisonModels(str, 'ComparaisonArm', fig, 0);%SolStat ComparaisonTwist ComparaisonArm
 
-% Display kimatics of optimal solution
+% Display kinematics of optimal solution
 fig = figure;
 for i=1:size(str,2)
      disp(strcat('### Model: ', str(i).name, ' ###'));
     for rep=1:size(str(i).QVU,3)
-        generateKinematics2(str(i), rep, fig);
+        generateKinematics2(str(1), 5, fig(1));
     end
     if i~= size(str,2), pause; end
 end
 
+clear optStat
 % Get statistics for each model and store it in a variable
 for i=1:size(str,2)
     disp(strcat('### Model: ', str(i).name, ' ###'));
