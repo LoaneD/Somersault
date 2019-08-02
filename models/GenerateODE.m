@@ -8,7 +8,6 @@ tau_base = SX.zeros(6,1);
 forDyn = @(x,u)[  x(model.idx_v)
     FDab_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
 
-
 forDyn2 = @(x,u)[  x(model.idx_v)
     FDcrb_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
 
@@ -51,11 +50,13 @@ qdot = forDyn(x,u);         % Model equations
 
 % Objective term
 switch data.obj
-    case 'twist', L = 0.5* (u'*u);  
+    case 'twist', L = 0.5* (u'*u); 
+    case 'twistPond'
+        if strcmpi(model.name, '10'), L = 10*(u([1 3])'*u([1 3]))+0.01*(u([2 4])'*u([2 4]));   
+        else, L = 0.01*(u'*u);  
+        end
     case 'torque', L = 0.5* (u'*u);  
     case 'trajectory', L = 0.5* (qdot(7:end,1)'*qdot(7:end,1));  
-%     case 'u2', L = 0.5* (u'*u);  
-%     case 'u2', L = 0.5* (u'*u);  
 end
 
 
@@ -74,21 +75,25 @@ elseif strcmpi(data.odeMethod,'rk4')
         DT = t/data.Nint/M;
     end
     f = Function('f', {x, u}, {forDyn(x,u), L});
-    %    f = Function('f', {x, u}, {forDyn2(x,u), L}); %for test
-    X0 = SX.sym('X0', model.nx);
+%     f = Function('f', {x}, {x});
+%     opts = struct('main', true, 'mex', true);
+%     f.generate('dynamic.c', opts);
+%     mex dynamic.c -largeArrayDims 
+    
+    X0 = SX.sym('X0', model.nx,1);
     Xi = SX.sym('Xi', model.nx,5);
     %    ki = SX.sym('ki', 4);%test
     Xi(:,1) = X0;
    
-    U =  SX.sym('U',  model.nu);
+    U =  SX.sym('U',  model.nu,1);
     X = X0;
     Q = 0;
     
     for j=1:M
-        [k1, k1_q] = f(X, U);
-        [k2, k2_q] = f(X + DT/2 * k1, U);
-        [k3, k3_q] = f(X + DT/2 * k2, U);
-        [k4, k4_q] = f(X + DT * k3, U);
+       [k1, k1_q] = f(X, U);
+       [k2, k2_q] = f(X + DT/M/2 * k1, U);
+       [k3, k3_q] = f(X + DT/M/2 * k2, U);
+       [k4, k4_q] = f(X + DT/M * k3, U);
         
         Xi(:,j+1) = Xi(:,j) + DT/6*(k1 +2*k2 +2*k3 +k4);
         
@@ -100,7 +105,7 @@ elseif strcmpi(data.odeMethod,'rk4')
     else
         model.odeF = Function('odeF', {X0, U, t}, {X, Q, Xi}, {'x0','p', 't'}, {'xf', 'qf','x4'});
     end    
-elseif strcmpi(data.odeMethod,'rk4_dt')
+elseif isfield(data,'dt')
    % Fixed step Runge-Kutta 4 integrator
    M = 4; % RK4 steps per interval
    DT = SX.sym('DT', 1);%MICK

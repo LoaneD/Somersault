@@ -26,9 +26,13 @@ q = SX.sym('x', model.nq,1);
 u = SX.sym('u', model.nu,1);
 qdot = forDyn(x,u);
 switch data.obj
-    case 'twist', L = 0.5* (u'*u);  
+    case 'twist', L = 0.5* (u'*u); 
+    case 'twistPond'
+        if strcmpi(model.name, '10'), L = 10*(u([1 3])'*u([1 3]))+0.01*(u([2 4])'*u([2 4]));   
+        else, L = 0.01*(u'*u);  
+        end
     case 'torque', L = 0.5* (u'*u);  
-    case 'trajectory', L = 0.5* (qdot(7:end,1)'*qdot(7:end,1));  
+    case 'trajectory', L = 0.5* (qdot(7:end,1)'*qdot(7:end,1)); 
 end
 f = Function('f', {x, u}, {forDyn(x,u), L});
 
@@ -56,6 +60,7 @@ end
 function w0 = generateDMS(model, data, rep, QVU, w0, option)
 
 if rep == 0 %w0 10 DoF taken from 8 DoF optimal solutions
+    w0 = [w0;  data.x0(:,1)];
     for k=0:data.Nint-1
         w0 = [w0;  data.u0(:,k+1)];
         w0 = [w0;  data.x0(:,k+2)];
@@ -65,6 +70,7 @@ if rep == 0 %w0 10 DoF taken from 8 DoF optimal solutions
         w0 = [t;w0];
     end
 elseif rep==1
+    w0 = [w0;  data.x0];
     for k=0:data.Nint-1
         w0 = [w0;  data.u0];
         w0 = [w0;  data.x0];
@@ -81,9 +87,13 @@ else
         else, t=0.95+0.1*rand(1); end
         w0 = [t;w0];
     end
+    w0u = (model.umin+(model.umax-model.umin).*rand(size(model.umin)));
+    if isfield(data,'Duration'), w0 = [w0;generateCheck(model, data, QVU, 0, w0u, option)];
+    else, w0 = [w0;generateCheck(model, data, QVU, 0, w0u, option, t)]; end
+    
     for k=0:data.Nint-1
-        w0u = (model.umin+(model.umax-model.umin).*rand(size(model.umin)));
         w0 = [w0;w0u];
+        w0u = (model.umin+(model.umax-model.umin).*rand(size(model.umin)));
         if isfield(data,'Duration'), w0 = [w0;generateCheck(model, data, QVU, k, w0u, option)];
         else, w0 = [w0;generateCheck(model, data, QVU, k, w0u, option, t)]; end
     end    
@@ -95,20 +105,19 @@ end
 function w0 = generateColl(model, data, rep, QVU, w0, option)
 
 if rep==1
+    w0 = [w0;  data.x0];
     for k=0:data.Nint-1
-        w0 = [w0;  data.u0];
         if strcmpi(data.collocMethod, 'legendre')
+            w0 = [w0;  data.u0];
             for i=1:data.degree
                 w0 = [w0;  data.x0];
-                w0 = [w0;  data.u0];
             end
-%         elseif strcmpi(data.collocMethod, 'hermite')
-%             w0 = [w0;  data.x0];
-%             w0 = [w0;  data.u0];
+        else
+            w0 = [w0;  data.u0];
         end
         w0 = [w0;  data.x0];
     end
-    w0 = [w0;  data.u0];
+    if ~strcmpi(data.collocMethod, 'legendre'), w0 = [w0;  data.u0];end
     
     if ~isfield(data,'Duration')
         if isfield(data, 'timeL'), t=data.timeL+(data.timeU-data.timeL)*rand(1);
@@ -124,27 +133,21 @@ else
     else
         tg = getTimeScale(model,data);
     end
-    w0u1 = (model.umin+(model.umax-model.umin).*rand(size(model.umin)));
+    w0 = [w0;generate(model, QVU, 0, option,tg)];
     for k=0:data.Nint-1
-        w0u = w0u1;
-        w0u1 = (model.umin+(model.umax-model.umin).*rand(size(model.umin)));
+        w0u = (model.umin+(model.umax-model.umin).*rand(size(model.umin)));
         if strcmpi(data.collocMethod, 'legendre')
             w0 = [w0;w0u];
             for i=1:data.degree
                 w0 = [w0;generate(model, QVU, k*(1+data.degree)+i, option,tg)];
-                w0 = [w0;(model.umin+(model.umax-model.umin).*rand(size(model.umin)))];
             end
             w0 = [w0;  generate(model, QVU, (k+1)*(1+data.degree), option,tg)];
-%         elseif strcmpi(data.collocMethod, 'hermite')
-%             w0 = [w0;w0u];
-%             w0 = [w0;  generate(model, QVU, k*2+1, option,tg)];
-%             w0 = [w0;  generate(model, QVU, 2*(k+1), option,tg)];
         else
             w0 = [w0;w0u];
             w0 = [w0;  generate(model, QVU, k+1, option,tg)];
         end
     end
-    w0 = [w0;w0u1];
+    if ~strcmpi(data.collocMethod, 'legendre'), w0 = [w0;(model.umin+(model.umax-model.umin).*rand(size(model.umin)))]; end
 end
 
 end

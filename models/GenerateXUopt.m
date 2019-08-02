@@ -13,50 +13,62 @@ nint = data.Nint+1;
 if strcmpi(data.NLPMethod, 'Collocation')
     if strcmpi(data.collocMethod, 'legendre')
         nint = nint + data.Nint*data.degree;
-%     elseif strcmpi(data.collocMethod, 'hermite')
-%         nint = nint + data.Nint;
-%         tgrid = getTimeScale(model, data);
     end
 end
-u_opt = nan(model.nu, nint);
+u_opt = nan(model.nu,nint);
 q_opt = nan(model.NB,nint);
 v_opt = nan(model.NB,nint);
 
-% if strcmpi(data.NLPMethod, 'Collocation') && strcmpi(data.collocMethod, 'hermite')
+% if size(w_opt(1+model.nu:model.nx+model.nu:end)) < nint
 %     q_opt(:,1)=data.x0(model.idx_q);
 %     v_opt(:,1)=data.x0(model.idx_v);
-%     u_opt(:,1) = w_opt(1:model.nu);
-%     for i=1:data.Nint
-%         u_opt(:,i*2) = (w_opt((model.nu+model.nx*2)*i+1:(model.nu+model.nx*2)*i+model.nu)+w_opt((model.nu+model.nx*2)*(i-1)+1:(model.nu+model.nx*2)*(i-1)+model.nu))/2;        
-%         q_opt(:,i*2) = w_opt((model.nu+model.nx*2)*(i-1)+model.nu+1:(model.nu+model.nx*2)*(i-1)+model.nu+model.nq);
-%         v_opt(:,i*2) = w_opt((model.nu+model.nx*2)*(i-1)+model.nu+1+model.nq:(model.nu+model.nx*2)*(i-1)+model.nu+model.nx);
-%         
-%         u_opt(:,i*2+1) = w_opt((model.nu+model.nx*2)*(i-1)+1:(model.nu+model.nx*2)*(i-1)+model.nu);
-%         q_opt(:,i*2+1) = w_opt((model.nu+model.nx*2)*(i-1)+model.nu+model.nx+1:(model.nu+model.nx*2)*(i-1)+model.nu+model.nx+model.nq);
-%         v_opt(:,i*2+1) = w_opt((model.nu+model.nx*2)*(i-1)+model.nu+model.nx+1+model.nq:(model.nu+model.nx*2)*(i-1)+model.nu+model.nx+model.nx);
-%     end
+%     st = 2;
 % else
-    if size(w_opt(1+model.nu:model.nx+model.nu:end)) < nint
-        q_opt(:,1)=data.x0(model.idx_q);
-        v_opt(:,1)=data.x0(model.idx_v);
-    end
-    for i=1:model.nu
-        if strcmpi(data.NLPMethod, 'Collocation'), u_opt(i,:) = w_opt(i:model.nx+model.nu:end)';
-        else, u_opt(i,1:end-1) = w_opt(i:model.nx+model.nu:end)';
-        end
-    end
-    
-    for i=1:model.nq
-        if size(w_opt(1+model.nu:model.nx+model.nu:end)) < nint
-            q_opt(i,2:end) = w_opt(i+model.nu:model.nx+model.nu:end)';
-            v_opt(i,2:end) = w_opt(i+model.nu+model.nq:model.nx+model.nu:end)';
-        else
-            q_opt(i,:) = w_opt(i+model.nu:model.nx+model.nu:end)';
-            v_opt(i,:) = w_opt(i+model.nu+model.nq:model.nx+model.nu:end)';
-        end
-    end
+    st = 1;
 % end
+if strcmpi(data.NLPMethod, 'Collocation') && strcmpi(data.collocMethod, 'legendre')
+    for i=0:data.Nint-1
+%         u_opt(:,1+(1+data.degree)*i) = w_opt(1+i*(model.nu+model.nx*(data.degree+1)):model.nu+i*(model.nu+model.nx*(data.degree+1)),1);
+        u_opt(:,1+(1+data.degree)*i) = w_opt(model.nx+1+i*(model.nu+model.nx*(data.degree+1)):moedl.nx+model.nu+i*(model.nu+model.nx*(data.degree+1)),1);
+        for j=1:data.degree
+            u_opt(:,1+(1+data.degree)*i+j) = w_opt(model.nx+1+i*(model.nu+model.nx*(data.degree+1)):model.nx+model.nu+i*(model.nu+model.nx*(data.degree+1)),1);
+%             u_opt(:,1+(1+data.degree)*i+j) = w_opt(1+i*(model.nu+model.nx*(data.degree+1)):model.nu+i*(model.nu+model.nx*(data.degree+1)),1);
+        end
+    end
+else
+    for i=1:model.nu
+        if strcmpi(data.NLPMethod, 'Collocation')
+%             u_opt(i,:) = w_opt(i:model.nx+model.nu:end)';
+            u_opt(i,:) = w_opt(model.nx+i:model.nx+model.nu:end)';
+        else
+            u_opt(i,1:end-1) = w_opt(model.nx+i:model.nx+model.nu:end)';
+%             u_opt(i,1:end-1) = w_opt(i:model.nx+model.nu:end)';
+        end
+    end
+end
 
+for i=1:model.nq
+    if strcmpi(data.NLPMethod, 'Collocation') && strcmpi(data.collocMethod, 'legendre')
+        for j=0:data.Nint-1
+%             q_opt(i,st+j*(data.degree+1)) = w_opt(i+model.nu+j*(model.nu+model.nx*(data.degree+1)),1);
+%             v_opt(i,st+j*(data.degree+1)) = w_opt(i+model.nu+model.nq+j*(model.nu+model.nx*(data.degree+1)),1);
+            q_opt(i,st+j*(data.degree+1)) = w_opt(i+j*(model.nu+model.nx*(data.degree+1)),1);
+            v_opt(i,st+j*(data.degree+1)) = w_opt(i+model.nq+j*(model.nu+model.nx*(data.degree+1)),1);
+            for k=1:data.degree
+%                 q_opt(i,1+k+j*(data.degree+1)) = w_opt(i+model.nu+model.nx*k+j*(model.nu+model.nx*(data.degree+1)),1);
+%                 v_opt(i,1+k+j*(data.degree+1)) = w_opt(i+model.nu+model.nq+model.nx*k+j*(model.nu+model.nx*(data.degree+1)),1);
+                q_opt(i,1+k+j*(data.degree+1)) = w_opt(i+model.nx*k+j*(model.nu+model.nx*(data.degree+1)),1);
+                v_opt(i,1+k+j*(data.degree+1)) = w_opt(i+model.nq+model.nx*k+j*(model.nu+model.nx*(data.degree+1)),1);
+            end
+        end
+    else
+%         q_opt(i,st:end) = w_opt(i+model.nu:model.nx+model.nu:end)';
+%         v_opt(i,st:end) = w_opt(i+model.nu+model.nq:model.nx+model.nu:end)';
+        q_opt(i,st:end) = w_opt(i:model.nx+model.nu:end)';
+        v_opt(i,st:end) = w_opt(i+model.nq:model.nx+model.nu:end)';
+    end
+end
+    
 if nargin>3
     
     a = ceil(sqrt(model.nq+1)); 
