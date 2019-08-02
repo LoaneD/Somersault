@@ -24,9 +24,13 @@ x = SX.sym('x', model.nx,1);
 u = SX.sym('u', model.nu,1);
 qdot = forDyn(x,u);
 switch data.obj
-    case 'twist', L = 0.5* (u'*u);
-    case 'torque', L = 0.5* (u'*u);
-    case 'trajectory', L = 0.5* (qdot(7:end,1)'*qdot(7:end,1));
+    case 'twist', L = 0.5* (u'*u); 
+    case 'twistPond'
+        if strcmpi(model.name, '10'), L = 10*(u([1 3])'*u([1 3]))+0.01*(u([2 4])'*u([2 4]));   
+        else, L = 0.01*(u'*u);  
+        end
+    case 'torque', L = 0.5* (u'*u);  
+    case 'trajectory', L = 0.5* (qdot(7:end,1)'*qdot(7:end,1));  
 end
 f = Function('f', {x, u}, {forDyn(x,u), L});
 
@@ -180,7 +184,7 @@ end
 if strcmpi(data.obj, 'twist')
     o = Xk(model.dof.Twist)/(2*pi); 
 elseif strcmpi(data.obj, 'twistPond') 
-    if isfield(data.freeSomerSpeed, 'pond')
+    if isfield(data, 'freeSomerSpeed') && strcmpi(data.freeSomerSpeed, 'pond')
         o = 1000*Xk(model.dof.Twist) + J + 0.01*Xk0(model.dof.Somer);
     else
         o = 1000*Xk(model.dof.Twist) + J;
