@@ -65,7 +65,27 @@ lbg = [];
 ubg = [];
 
 
-Xk = data.x0;
+% Xk = data.x0;
+Xk = MX.sym(['X_' '0'], model.nx);
+w = {w{:}, Xk};
+Xk0 = Xk;
+lbw = [lbw; model.xmin];
+ubw = [ubw; model.xmax];
+g = [g, {Xk}];
+cStartl = [];
+cStartu = [];
+for i=1:model.nx
+    if i ~= model.dof.Somer+model.nq || ~isfield(data, 'freeSomerSpeed')
+        cStartl = [cStartl; data.x0(i)];
+        cStartu = [cStartu; data.x0(i)];
+    else
+        cStartl = [cStartl; model.xmin(i)];
+        cStartu = [cStartu; model.xmax(i)];
+    end
+end
+lbg = [lbg; cStartl];
+ubg = [ubg; cStartu];
+
 N = data.Nint; % number of control intervals
 if ~isfield(data, 'Duration')
     t = MX.sym('t',1);
@@ -81,10 +101,12 @@ if ~isfield(data, 'Duration')
 else
     T = data.Duration;
 end
-h = T/N;
+if ~isfield(data, 'dt'), h = T/N; end
+tgrid = getTimeScale(model,data,T);
 
 % Formulate the NLP
 for k=0:N-1
+    if isfield(data, 'dt'), h = tgrid(k+2)-tgrid(k+1); end
     % New NLP variable for the control
     Uk = MX.sym(['U_' num2str(k)], model.nu);
     w = {w{:}, Uk};
@@ -149,32 +171,37 @@ if nargin > 2
         ubg = [ubg; constraints(:,2)];
     end
 else
-    g = [g, {Xk([model.dof.Tilt model.dof.RighArmY model.dof.LeftArmY model.dof.Somer])}  ];
-    lbg = [lbg; -15/180*pi;  -inf;  120/180*pi; 2*pi-5*pi/180];
-    ubg = [ubg;  15/180*pi; -120/180*pi; inf; 2*pi+5*pi/180];
+    g = [g, {Xk([model.dof.Tilt model.dof.RighArmY model.dof.LeftArmY model.dof.Somer])}  ];% model.dof.Twist])}  ];
+    lbg = [lbg; -15/180*pi;  -inf;  120/180*pi; 2*pi-5*pi/180];%; -Inf];
+    ubg = [ubg;  15/180*pi; -120/180*pi; inf; 2*pi+5*pi/180];%; -pi*3];
 end
 
 % Create an NLP solver
 if strcmpi(data.obj, 'twist')
-    prob = struct('f', Xk(model.dof.Twist)/(2*pi), ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = Xk(model.dof.Twist)/(2*pi); 
+elseif strcmpi(data.obj, 'twistPond') 
+    if isfield(data.freeSomerSpeed, 'pond')
+        o = 1000*Xk(model.dof.Twist) + J + 0.01*Xk0(model.dof.Somer);
+    else
+        o = 1000*Xk(model.dof.Twist) + J;
+    end
 elseif strcmpi(data.obj, 'trajectory')
     if nargin <= 2 || (nargin > 2 && ~ismember(model.dof.Twist,variables))
         g = [g, {Xk([model.dof.Twist])}  ];
-        lbg = [lbg; -4*pi-0.5*pi];
+        lbg = [lbg; -Inf];
         ubg = [ubg; -4*pi+0.5*pi];
     end
-    prob = struct('f', J, ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = J;
 elseif strcmpi(data.obj, 'torque')
     if nargin <= 2 || (nargin > 2 && ~ismember(model.dof.Twist,variables))
         g = [g, {Xk([model.dof.Twist])}  ];
         % back somersault so twist in opposite sens
-        lbg = [lbg; -4*pi-0.5*pi];
+        lbg = [lbg; -Inf];
         ubg = [ubg; -4*pi+0.5*pi];
     end
-    prob = struct('f', J, ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = J;
 end
+prob = struct('f', o, ...
+    'x', vertcat(w{:}), 'g', vertcat(g{:}));
 
 end

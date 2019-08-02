@@ -25,7 +25,6 @@ J = 0;
 g={};
 lbg = [];
 ubg = [];
-tgrid = getTimeScale(model, data);
 
 N = data.Nint; % number of control intervals
 if ~isfield(data, 'Duration')
@@ -47,7 +46,27 @@ h = T/N;
 
 % Formulate the NLP
 
-Xk = data.x0;
+% Xk = data.x0;
+Xk = MX.sym(['X_' '0'], model.nx);
+w = {w{:}, Xk};
+Xk0 = Xk;
+lbw = [lbw; model.xmin];
+ubw = [ubw; model.xmax];
+g = [g, {Xk}];
+cStartl = [];
+cStartu = [];
+for i=1:model.nx
+    if i ~= model.dof.Somer+model.nq || ~isfield(data, 'freeSomerSpeed')
+        cStartl = [cStartl; data.x0(i)];
+        cStartu = [cStartu; data.x0(i)];
+    else
+        cStartl = [cStartl; model.xmin(i)];
+        cStartu = [cStartu; model.xmax(i)];
+    end
+end
+lbg = [lbg; cStartl];
+ubg = [ubg; cStartu];
+
 Uk = MX.sym(['U_' num2str(0)], model.nu);
 w = {w{:}, Uk};
 lbw = [lbw; model.umin];
@@ -102,25 +121,30 @@ end
 
 % Create an NLP solver
 if strcmpi(data.obj, 'twist')
-    prob = struct('f', Xk(model.dof.Twist)/(2*pi), ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = Xk(model.dof.Twist)/(2*pi); 
+elseif strcmpi(data.obj, 'twistPond') 
+    if isfield(data.freeSomerSpeed, 'pond')
+        o = 1000*Xk(model.dof.Twist) + J + 0.01*Xk0(model.dof.Somer);
+    else
+        o = 1000*Xk(model.dof.Twist) + J;
+    end
 elseif strcmpi(data.obj, 'trajectory')
     if nargin <= 2 || (nargin > 2 && ~ismember(model.dof.Twist,variables))
         g = [g, {Xk([model.dof.Twist])}  ];
-        lbg = [lbg; -4*pi-0.5*pi];
+        lbg = [lbg; -Inf];
         ubg = [ubg; -4*pi+0.5*pi];
     end
-    prob = struct('f', J, ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = J;
 elseif strcmpi(data.obj, 'torque')
     if nargin <= 2 || (nargin > 2 && ~ismember(model.dof.Twist,variables))
         g = [g, {Xk([model.dof.Twist])}  ];
         % back somersault so twist in opposite sens
         lbg = [lbg; -Inf];
-        ubg = [ubg; -3*pi];
+        ubg = [ubg; -4*pi+0.5*pi];
     end
-    prob = struct('f', J, ...
-        'x', vertcat(w{:}), 'g', vertcat(g{:}));
+    o = J;
 end
+prob = struct('f', o, ...
+    'x', vertcat(w{:}), 'g', vertcat(g{:}));
 
 end
