@@ -7,7 +7,7 @@ function verifyTranspersion(model, data, QVU, fig1, fig2, topt)
 dist = @(A,B) sqrt((A(1)-B(1))^2+(A(2)-B(2))^2+(A(3)-B(3))^2);
 d = [];
 touch = [];
-sumrep = [];
+sumrep = []; %list all the repetitions where there was transpersion and the number of times it happened
 for rep=1:size(QVU,3)
     if isfield(data, 'Duration')
         tgrid(rep,:) = getTimeScale(model, data);
@@ -73,9 +73,23 @@ for t=1:size(QVU,2)
     end
 end
 
+markers = [];
+twist = [];
+for rep=1:size(QVU,3)
+    if sum(touch(:,rep)) ~= 0
+        markers = [markers rep];
+    end
+    twist = [twist -QVU(model.dof.Twist,end,rep)*model.Unitcoef(model.dof.Twist)];
+end
+
 figure(fig1);
-histogram(sumt,size(QVU,2));
-figure(fig2);
-histogram(sumrep, size(QVU,3))
+plot(1:size(QVU,3), twist, '-k');
+xlabel('Repetition'); ylabel('Twist value (rev)');
+hold on
+plot(markers, twist(markers), 'rd', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+hold off
+% histogram(sumt,size(QVU,2));
+% figure(fig2);
+% histogram(sumrep, size(QVU,3))
 
 end

@@ -10,21 +10,27 @@ if nargout == 2
 end
 
 nstructPlus = nargin - 1;
-str1f = fieldnames(str1);
-for i=1:nstructPlus
-    Bf = fieldnames(varargin{i});
-    x = ismember(Bf,str1f);
-    Bft = Bf(~x);
-    for k=1:numel(Bft)
-        str1.(Bft{k}) = 0;
+% str1f = fieldnames(str1);
+for j=1:nstructPlus
+    if j==1, str1f = fieldnames(str1);
+    else, str1f = fieldnames(varargin{j-1});
     end
-    y = ismember(str1f,Bf);
-    str1ft = str1f(~y);
-    for k=1:numel(str1ft)
-        varargin{i}.(str1ft{k}) = 0;
+    for i=j:nstructPlus
+        Bf = fieldnames(varargin{i});
+        x = ismember(Bf,str1f);
+        Bft = Bf(~x);
+        for k=1:numel(Bft)
+            if j==1,str1.(Bft{k}) = 0;
+            else,varargin{j-1}.(Bft{k}) = 0;
+            end
+        end
+        y = ismember(str1f,Bf);
+        str1ft = str1f(~y);
+        for k=1:numel(str1ft)
+            varargin{i}.(str1ft{k}) = 0;
+        end
     end
 end
-
 
 struct1(1) = str1;
 for i=1:nstructPlus

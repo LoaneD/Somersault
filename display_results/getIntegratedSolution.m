@@ -15,7 +15,8 @@ forDyn = @(x,u)[  x(model.idx_v)
 f = Function('f', {x, u}, {forDyn(x,u)});
 
 % integrate collocation optimal solutions over each intervals
-DT = data.Duration/data.Nint;
+tgrid = getTimeScale(model,data);
+
 errors = [];
 xint = [];
 for rep=1:size(QVU,3)
@@ -26,7 +27,7 @@ for rep=1:size(QVU,3)
     for i=1:size(QVU,2)-1
         xt = QVU(1:model.nx, i, rep);
         ut = QVU(model.nx+1:end, i, rep);
-        
+        DT = tgrid(i+1)-tgrid(i);
 %         Fk = model.odeF('x0', xt, 'p', ut);
 %         Fk_prop = model.odeF('x0', xt1(:,i,rep), 'p', ut);
 %         xf = full(Fk.xf);

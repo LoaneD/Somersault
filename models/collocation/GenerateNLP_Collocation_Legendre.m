@@ -93,7 +93,7 @@ ubg = [ubg; cStartu];
 N = data.Nint; % number of control intervals
 if ~isfield(data, 'Duration')
     t = MX.sym('t',1);
-    w = {w{:}, t};
+    w = {t,w{:}};
     if isfield(data, 'timeL')
         lbw = [lbw; data.timeL];
         ubw = [ubw; data.timeU];
@@ -153,7 +153,7 @@ for k=0:N-1
     lbw = [lbw; model.xmin];
     ubw = [ubw; model.xmax];
     % Add equality constraint
-    if strcmpi(model.name,'10')
+    if strcmpi(model.name,'10') && isfield(model, 'colD')
         dist = model.colD('Q',Xk_end);
         g = [g, {Xk_end-Xk}, {dist.d}];
         lbg = [lbg; zeros(model.nx,1); model.markers.dmin+0.01];
@@ -184,8 +184,8 @@ end
 if strcmpi(data.obj, 'twist')
     o = Xk(model.dof.Twist)/(2*pi); 
 elseif strcmpi(data.obj, 'twistPond') 
-    if isfield(data, 'freeSomerSpeed') && strcmpi(data.freeSomerSpeed, 'pond')
-        o = 1000*Xk(model.dof.Twist) + J + 0.01*Xk0(model.dof.Somer);
+    if isfield(data, 'freeSomerSpeed') && isa(data.freeSomerSpeed, 'double')
+        o = 1000*Xk(model.dof.Twist) + J + data.freeSomerSpeed*Xk0(model.dof.Somer+model.nq);
     else
         o = 1000*Xk(model.dof.Twist) + J;
     end
@@ -205,7 +205,6 @@ elseif strcmpi(data.obj, 'torque')
     end
     o = J;
 end
-prob = struct('f', o, ...
-    'x', vertcat(w{:}), 'g', vertcat(g{:}));
+prob = struct('f', o, 'x', vertcat(w{:}), 'g', vertcat(g{:}));
 
 end
