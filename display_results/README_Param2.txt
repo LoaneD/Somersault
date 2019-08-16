@@ -1,3 +1,14 @@
+######################
+## README RESULTATS ##
+######################
+Voir excel pour résultats
+
+DMS : Direct Multiple Shooting
+DC : Direct Collocation
+DL : Degré de Liberté
+CnT = Contraintes de non Transpersion
+
+#####################
 Détails paramètres :
 #####################
 -- Contraintes durant le mouvement :
@@ -21,45 +32,58 @@ ub = [15°, 120°, inf, 2*pi + 5°]
 Détails résultats enregistrés :
 ################################
 **Folder classique (xx pas 10 simulations)
-DMS 10 DL 100 int initial guess vitesse Ry = 0 xx
-DMS 10 DL 100 int initial guess vitesse Ry = 0 temps libre xx 
 DMS 10 DL 100 int 
 DMS 10 DL 100 int temps libre
-DMS 10 DL 30 int xx
-DMS 10 DL 30 int temps libre xx
+DMS 10 DL 30 int 
+DMS 10 DL 30 int temps libre 
 DMS 10 DL 30 int somersault speed free xx
 DMS 10 DL 100 int somersault speed free xx
 DMS 8 DL 30 int
 DMS 10 DL 30 int IG solutions optimales 8
 DMS 10 DL 30 int IG solutions optimales 8 sans CnT
 --
-DC Legendre 3 10 DL 30 int xx
-DC Collocation Trapezoïdale 30 int
-DC Collocation Hermite 30 int
-DC Legendre 3 10 DL 100 int xx
-DC Collocation Trapezoïdale 100 int
-DC Collocation Hermite 100 int
+DCollocation Trapezoïdale 30 int
+DCollocation Hermite 30 int
+DCollocation Trapezoïdale 100 int
+DCollocation Hermite 100 int
 
-**Folder objective ponderated : les fonctions objectives sont le twist + les contrôles pondérés 
-//DMS 8 DL 30 int
-DMS 8 DL 100 int
-//DMS 10 DL 30 int  
-DMS 10 DL 100 int 
-//DMS 10 DL 30 int somersault speed free 
-DMS 10 DL 100 int somersault speed free
-//DMS 10 DL 30 int somersault speed free avec pondération vitesse salto
-DMS 10 DL 100 int somersault speed free avec pondération vitesse salto
---
-DC Legendre 3 10 DL 30 int 
-//DC Collocation Trapezoïdale 30 int
-//DC Collocation Hermite 30 int
-DC Legendre 3 10 DL 100 int
-DC Collocation Trapezoïdale 100 int
-DC Collocation Hermite 100 int
---
-Collocation avec vitesse libre + avec pondération aussi
-DC Collocation Legendre 3 30 int vitesse salto initiale libre
-DC Collocation Legendre 3 30 int vitesse salto initiale libre et pondération 0.01
-DC Collocation Legendre 3 30 int vitesse salto initiale libre et pondération 0.1
-DC Collocation Legendre 3 30 int vitesse salto initiale libre et pondération 1
-DC Collocation Legendre 3 30 int vitesse salto initiale libre et pondération 10
+	**Folder "objective ponderated" : les fonctions objectives sont le twist + les contrôles pondérés 
+	DMS 8 DL 30 int
+	DMS 8 DL 100 int
+	DMS 10 DL 30 int  
+	DMS 10 DL 100 int 
+	DMS 10 DL 30 int somersault speed free 
+	DMS 10 DL 100 int somersault speed free
+	DMS 10 DL 100 int somersault speed free avec pondération vitesse salto
+	DMS 10 DL 100 int somersault speed free avec pondération vitesse salto sans contraintes de non transpersion (sCT)
+	DMS 8 DL 100 int somersault speed free 
+-----
+	DC Legendre 3 10 DL 30 int 
+	DCollocation Trapezoïdale 30 int
+	DCollocation Hermite 30 int
+	DC Legendre 3 10 DL 100 int
+	DCollocation Trapezoïdale 100 int
+	DCollocation Hermite 100 int
+	DC Legendre 3 10 DL 100 int somersault speed free 
+
+		**Folder "ColocHermite_fS" : Collocation avec vitesse libre + avec pondération aussi
+		DCollocation Legendre 3 30 int vitesse salto initiale libre
+		DCollocation Legendre 3 30 int vitesse salto initiale libre et pondération 0.01
+		DCollocation Legendre 3 30 int vitesse salto initiale libre et pondération 0.1
+		DCollocation Legendre 3 30 int vitesse salto initiale libre et pondération 1
+		DCollocation Legendre 3 30 int vitesse salto initiale libre et pondération 10
+
+	**Folder "MEX" : utilisation de la fonction externe par MEX file pour lancer plus de simulations pour chaque
+	DMS 8 DL 30 int  
+	DMS 8 DL 100 int
+	DMS 10 DL 30 int
+	DMS 10 DL 100 int
+	DMS 10 DL 30 int sans pondération de la fonction objective
+	DMS 10 DL 100 int sans pondération de la fonction objective
+-----
+	DC Legendre 3 10 DL 30 int 
+	DC Legendre 3 10 DL 100 int
+	DCollocation Trapezoïdale 30 int
+	DCollocation Trapezoïdale 100 int
+	DCollocation Hermite 30 int
+	DCollocation Hermite 100 int

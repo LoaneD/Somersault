@@ -8,14 +8,7 @@ DC : Direct Collocation
 DL : Degré de Liberté
 CnT = Contraintes de non Transpersion
 
----- Param1
-Contraintes : tilt [-15 ; 15]°, bras en haut, 1 salto ± 5°, non transpersion
-Bornes U : [-5;-50;5;50]
-Bornes Rz bras : [-0.8;2.25] droit [-2.25;0.8] gauche
-Maximum itérations : 6000
-
-
----- Param 2
+-- Param 2 :
 Contraintes : tilt [-15 ; 15]°, bras en haut, 1 salto ± 5°, non transpersion
 Bornes U : [-10;-100;10;100]
 Bornes Rz bras : [-pi/4;3*pi/4] droit [-3*pi/4;pi/4] gauche
