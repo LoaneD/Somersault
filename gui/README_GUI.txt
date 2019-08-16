@@ -16,6 +16,7 @@ Avant de lancer l'optimisation plusieurs paramètres peuvent être choisis (et l
 	- nombre de salto (par défaut pas de contrainte dessus)
 	- nombre de vrille (par défaut pas de contrainte dessus)
 	- valeur du tilt (par défaut pas de contrainte dessus)
+==> une vérification est effectuée pour vérifier que les contraintes à l'arrivée ajoutées (hauteur surtout) sont faisables connaissant la dynamique et si les valeurs de début et d'arrivée ne sont pas en dehors des bornes autorisées (dans ce cas, message d'erreur affiché et valeurs incorrectes en rouge).
 ***Options d'optimisation :
 	- nombre d'intervalles utilisés (défaut 30 : si on choisit un modèle à 10 DoF avec moins de 75 intervalles message pour conseiller d'augmenter)
 	- nombre de simulations lancées (défaut 10)
