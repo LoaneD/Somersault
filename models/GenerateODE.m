@@ -3,25 +3,32 @@ function  model = GenerateODE(model, data)
 import casadi.*
 
 tau_base = SX.zeros(6,1);
-% forDyn = @(x,u)[  x(model.idx_v)
-%     FDab_Casadi( model, x(model.idx_q).*model.Scaling.q, x(model.idx_v).*model.Scaling.v, vertcat(tau_base ,u.* model.Scaling.u)  )];
+% % forDyn = @(x,u)[  x(model.idx_v)
+% %     FDab_Casadi( model, x(model.idx_q).*model.Scaling.q, x(model.idx_v).*model.Scaling.v, vertcat(tau_base ,u.* model.Scaling.u)  )];
 forDyn = @(x,u)[  x(model.idx_v)
     FDab_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
-
-forDyn2 = @(x,u)[  x(model.idx_v)
-    FDcrb_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
-
+% 
+% forDyn2 = @(x,u)[  x(model.idx_v)
+%     FDcrb_Casadi( model, x(model.idx_q), x(model.idx_v), vertcat(tau_base ,u)  )];
+% 
 x = SX.sym('x', model.nx,1);
 q = SX.sym('x', model.nq,1);
 u = SX.sym('u', model.nu,1);
 xu = vertcat(x,u);
-
+% 
 fk = @(x)(forward_kinematics_MB(model,q));
 model.ForKin = Function('ForKin',{q},{fk(x)},{'q'},{'Tags'});
 
 fk2 = @(x)(forward_kinematics_MB2(model,q));
 model.ForKin2 = Function('ForKin2',{q,},{fk2(x)},{'q'},{'Tags'});
 
+% test_mex_MB(model, data);
+% funImporter = Importer('test_fun.mexw64', 'dll');
+% importedFun = external('fun', funImporter);
+% importedJacFun = external('jac_fun', funImporter);
+% x_mx = MX.sym('x',model.nx+model.nu,1);
+% mxFunMEX = importedFun(xu);
+% jacobian(mxFunMEX, xu)
 
 
 % opts = struct('mex', true);
@@ -46,7 +53,8 @@ model.ForKin2 = Function('ForKin2',{q,},{fk2(x)},{'q'},{'Tags'});
 % [H, C] = HandC( model, q0, v0 )   
 % qdd = FDab_Casadi( model, q0, v0, tau0)
 
-qdot = forDyn(x,u);         % Model equations
+qdot = forDyn(x,u);
+% qdot = importedFun(xu);         % Model equations
 
 % Objective term
 switch data.obj
@@ -59,6 +67,7 @@ switch data.obj
     case 'trajectory', L = 0.5* (qdot(7:end,1)'*qdot(7:end,1));  
 end
 
+funL = Function('funL', {u}, {L});
 
 if strcmpi(data.odeMethod,'sundials')
    % CVODES from the SUNDIALS suite
@@ -75,17 +84,16 @@ elseif strcmpi(data.odeMethod,'rk4')
         DT = t/data.Nint/M;
     end
     f = Function('f', {x, u}, {forDyn(x,u), L});
-%     f = Function('f', {x}, {x});
-%     opts = struct('main', true, 'mex', true);
-%     f.generate('dynamic.c', opts);
-%     mex dynamic.c -largeArrayDims 
     
     X0 = SX.sym('X0', model.nx,1);
     Xi = SX.sym('Xi', model.nx,5);
-    %    ki = SX.sym('ki', 4);%test
+%     X0 = MX.sym('X0', model.nx,1);
+%     Xi = MX.sym('Xi', model.nx,5);
+%        ki = SX.sym('ki', 4);%test
     Xi(:,1) = X0;
    
     U =  SX.sym('U',  model.nu,1);
+%     U =  MX.sym('U',  model.nu,1);
     X = X0;
     Q = 0;
     
@@ -94,6 +102,14 @@ elseif strcmpi(data.odeMethod,'rk4')
        [k2, k2_q] = f(X + DT/M/2 * k1, U);
        [k3, k3_q] = f(X + DT/M/2 * k2, U);
        [k4, k4_q] = f(X + DT/M * k3, U);
+%        k1 = importedFun(vertcat(X, U));
+%        k1_q = funL(U);
+%        k2 = importedFun(vertcat(X + DT/M/2 * k1, U));
+%        k2_q = funL(U);
+%        k3 = importedFun(vertcat(X + DT/M/2 * k2, U));
+%        k3_q = funL(U);
+%        k4 = importedFun(vertcat(X + DT/M * k3, U));
+%        k4_q = funL(U);
         
         Xi(:,j+1) = Xi(:,j) + DT/6*(k1 +2*k2 +2*k3 +k4);
         
